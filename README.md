@@ -11,12 +11,12 @@ pyROI — A simple roi selector built by python-opencv
 # Usage
 
 ```python
-import roi
+import pyROI
 
 # Support rect, circle, polygon, ellipse
 img_path = "luna.jpg"
 img = cv2.imread(img_path)  
-rect_roi = roi.select(src = img, selector_type =  "rect")
+rect_roi = pyROI.select(src = img, selector_type =  "rect")
 print(rect_roi)
 
 ```
