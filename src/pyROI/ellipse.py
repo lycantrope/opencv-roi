@@ -74,13 +74,11 @@ class Ellipse(Roi):
             self.minor_axis = self.get_minor_axis(self.major_axis)
             self._temp = None
 
-        print(event, flags)
         if event == cv2.EVENT_MOUSEWHEEL:
-            print(event, flags)
             if flags > 0:
-                self.axis_ratio += 0.2
+                self.axis_ratio += 0.025
             else:
-                self.axis_ratio -= 0.2
+                self.axis_ratio -= 0.025
             minor_axis = self.get_minor_axis(major_axis)
             self.minor_axis = minor_axis
 
