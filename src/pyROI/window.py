@@ -59,7 +59,7 @@ def named_window(
             hook_func()
 
 
-def show_window(src: ndarray, *, winname: str = ""):
+def show_window(src: ndarray, *, winname: str = "", **kwargs):
     """Display source image using opencv
 
     Args:
@@ -74,9 +74,11 @@ def show_window(src: ndarray, *, winname: str = ""):
     if not winname:
         winname = "image"
 
-    with named_window(winname):
+    with named_window(winname, **kwargs) as name:
         while True:
-            cv2.imshow(winname, src)
+            cv2.imshow(name, src)
             ret = cv2.waitKey(15) & 0xFF
             if ret in (Key.ESC, Key.ENTER, Key.Q, Key.q):
+                break
+            if cv2.getWindowProperty(name, cv2.WND_PROP_VISIBLE) < 1:
                 break
