@@ -50,6 +50,9 @@ def named_window(
     try:
         name = verify_winname(winname)
         cv2.namedWindow(name, cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty(name, cv2.WND_PROP_TOPMOST, 1)
+        cv2.waitKey(1)
+        cv2.setWindowProperty(name, cv2.WND_PROP_TOPMOST, 0)
         cv2.moveWindow(name, winpos_x, winpos_y)
         if callable(callback):
             cv2.setMouseCallback(name, callback)

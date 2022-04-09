@@ -16,7 +16,7 @@ mask = rect_roi.mask
 ```
 """
 __author__ = "Chung-Kuan Chen (b97b01045@gmail.com)"
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 
 from .key import *
 from .circle import *
