@@ -165,7 +165,6 @@ class Ellipse(Roi):
         self, center: Point, major_axis: Vector2D, minor_axis: Vector2D
     ) -> None:
         _mask = np.zeros_like(self._src_raw, dtype=np.uint8)
-        print(major_axis.angle, major_axis.angle * math.pi, major_axis.angle / math.pi)
 
         _mask = cv2.ellipse(
             _mask,

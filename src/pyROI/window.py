@@ -26,10 +26,14 @@ def verify_winname(winname: str) -> str:
 
 
 def close_window(winname: str) -> None:
-    cv2.waitKey(1)
-    cv2.destroyWindow(winname)
-    USED_WINNAME.remove(winname)
-    cv2.waitKey(1)
+    try:
+        cv2.waitKey(1)
+        cv2.destroyWindow(winname)
+        if winname in USED_WINNAME:
+            USED_WINNAME.remove(winname)
+        cv2.waitKey(1)
+    except Exception as e:
+        print(e)
 
 
 @contextmanager
