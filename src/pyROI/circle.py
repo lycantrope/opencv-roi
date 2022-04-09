@@ -6,10 +6,14 @@ import numpy as np
 
 from .base import Roi
 from .color import RED
+from .color import WHITE
 from .color import YELLOW
+from .image import Image
 from .key import Key
 from .point import calculate_distance
 from .point import Point
+from .screen import SCREEN_HEIGHT
+from .screen import SCREEN_WIDTH
 from .window import named_window
 
 __all__ = ["Circle"]
@@ -19,6 +23,7 @@ __all__ = ["Circle"]
 class Circle(Roi):
     center: Point = None
     radius: int = 0
+    src_size: Image = None
 
     def __post_init__(self) -> None:
         self._view: Optional[np.ndarray] = None
@@ -31,6 +36,52 @@ class Circle(Roi):
         if self.center is None:
             return Point(np.nan, np.nan)
         return self.center
+
+    @property
+    def mask(self) -> Point:
+        mask = self.src_size.zero_mask
+        cv2.circle(
+            mask, center=self.center, radius=self.radius, color=WHITE, thickness=-1
+        )
+        return mask
+
+    def select(
+        self,
+        src: np.ndarray,
+        *,
+        winname: str = "",
+        winpos_x: int = SCREEN_WIDTH // 2 - 100,
+        winpos_y: int = SCREEN_HEIGHT // 2 - 100,
+    ) -> "Circle":
+
+        self._run_flag = True
+        if not isinstance(src, np.ndarray):
+            raise TypeError("is not a numpy ndarray")
+
+        if src.ndim == 2:
+            self._src_raw = cv2.cvtColor(src, cv2.COLOR_GRAY2BGR)
+        else:
+            self._src_raw = src.copy()
+
+        self.src_size = Image(src.shape[1], src.shape[0])
+        self._view = self._src_raw.copy()
+
+        if not winname:
+            winname = "Select region of interest (ROI)..."
+
+        with named_window(
+            winname,
+            winpos_x=winpos_x,
+            winpos_y=winpos_y,
+            callback=self.__mouse_callback,
+        ) as name:
+            while self._run_flag:
+                cv2.imshow(name, self._view)
+                ret = cv2.waitKey(10) & 0xFF
+                if ret in (Key.ENTER, Key.S, Key.s):  # Select the roi when press
+                    # show window again
+                    break
+        return self
 
     def __mouse_callback(self, event, x, y, flags, param) -> None:
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -68,41 +119,3 @@ class Circle(Roi):
             beta=0.75,
             gamma=0,
         )
-
-    def select(
-        self,
-        src: np.ndarray,
-        *,
-        winname: str = "",
-        winpos_x: int = 400,
-        winpos_y: int = 100,
-    ) -> "Circle":
-
-        self._run_flag = True
-        if not isinstance(src, np.ndarray):
-            raise TypeError("is not a numpy ndarray")
-
-        if src.ndim == 2:
-            self._src_raw = cv2.cvtColor(src, cv2.COLOR_GRAY2BGR)
-        else:
-            self._src_raw = src.copy()
-
-        self._view = self._src_raw.copy()
-
-        if not winname:
-            winname = "Select region of interest..."
-
-        with named_window(
-            winname,
-            winpos_x=winpos_x,
-            winpos_y=winpos_y,
-            callback=self.__mouse_callback,
-        ) as name:
-            while self._run_flag:
-                cv2.imshow(name, self._view)
-                ret = cv2.waitKey(10) & 0xFF
-                if ret in (Key.ENTER, Key.S, Key.s):  # Select the roi when press
-                    # show window again
-                    break
-
-        return self

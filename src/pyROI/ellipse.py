@@ -9,11 +9,15 @@ from .base import Roi
 from .color import BLACK
 from .color import GREEN
 from .color import RED
+from .color import WHITE
 from .color import YELLOW
+from .image import Image
 from .key import Key
 from .point import calculate_distance
 from .point import Point
 from .point import Vector2D
+from .screen import SCREEN_HEIGHT
+from .screen import SCREEN_WIDTH
 from .window import named_window
 
 __all__ = ["Ellipse"]
@@ -25,6 +29,7 @@ class Ellipse(Roi):
     major_axis: Vector2D = None
     minor_axis: Vector2D = None
     axis_ratio: float = 0.6
+    src_size: Image = None
 
     def __post_init__(self) -> None:
         self._view: Optional[np.ndarray] = None
@@ -51,6 +56,69 @@ class Ellipse(Roi):
         if self.center is None:
             return Point(np.nan, np.nan)
         return self.center
+
+    @property
+    def mask(self) -> Point:
+        return cv2.ellipse(
+            self.src_size.zero_mask,
+            self.center,
+            axes=(int(self.major_axis.length), int(self.minor_axis.length)),
+            angle=int(self.major_axis.angle / math.pi * 180),
+            startAngle=0,
+            endAngle=360,
+            color=WHITE,
+            thickness=-1,
+        )
+
+    def select(
+        self,
+        src: np.ndarray,
+        *,
+        winname: str = "",
+        winpos_x: int = SCREEN_WIDTH // 2 - 100,
+        winpos_y: int = SCREEN_HEIGHT // 2 - 100,
+    ) -> "Ellipse":
+
+        self._run_flag = True
+        if not isinstance(src, np.ndarray):
+            raise TypeError("is not a numpy ndarray")
+
+        if src.ndim == 2:
+            self._src_raw = cv2.cvtColor(src, cv2.COLOR_GRAY2BGR)
+        else:
+            self._src_raw = src.copy()
+
+        self.src_size = Image(src.shape[1], src.shape[0])
+        self._view = self._src_raw.copy()
+
+        if not winname:
+            winname = "Select region of interest (ROI)..."
+        print("Press `w` or `s` to adjust the ratio of ellipse axes")
+        with named_window(
+            winname,
+            winpos_x=winpos_x,
+            winpos_y=winpos_y,
+            callback=self.__mouse_callback,
+        ) as name:
+            while self._run_flag:
+                cv2.imshow(name, self._view)
+                ret = cv2.waitKey(10) & 0xFF
+                if ret in (
+                    Key.ENTER,
+                    Key.ESC,
+                    Key.Q,
+                    Key.q,
+                ):
+                    break
+                if ret in (Key.S, Key.s, Key.W, Key.w):
+                    if ret in (Key.W, Key.w):
+                        self.axis_ratio += 0.025
+                    if ret in (Key.S, Key.s):
+                        self.axis_ratio -= 0.025
+                    self.minor_axis = self.get_minor_axis(self.major_axis)
+                    self.update_image(self.center, self.major_axis, self.minor_axis)
+
+        return self
 
     def __mouse_callback(self, event, x, y, flags, param) -> None:
 
@@ -125,52 +193,3 @@ class Ellipse(Roi):
             beta=0.75,
             gamma=0,
         )
-
-    def select(
-        self,
-        src: np.ndarray,
-        *,
-        winname: str = "",
-        winpos_x: int = 400,
-        winpos_y: int = 100,
-    ) -> "Ellipse":
-
-        self._run_flag = True
-        if not isinstance(src, np.ndarray):
-            raise TypeError("is not a numpy ndarray")
-
-        if src.ndim == 2:
-            self._src_raw = cv2.cvtColor(src, cv2.COLOR_GRAY2BGR)
-        else:
-            self._src_raw = src.copy()
-
-        self._view = self._src_raw.copy()
-
-        if not winname:
-            winname = "Select region of interest..."
-        print("Press `w` or `s` to adjust the ratio of ellipse axes")
-        with named_window(
-            winname,
-            winpos_x=winpos_x,
-            winpos_y=winpos_y,
-            callback=self.__mouse_callback,
-        ) as name:
-            while self._run_flag:
-                cv2.imshow(name, self._view)
-                ret = cv2.waitKey(10) & 0xFF
-                if ret in (
-                    Key.ENTER,
-                    Key.ESC,
-                    Key.Q,
-                    Key.q,
-                ):
-                    break
-                if ret in (Key.S, Key.s, Key.W, Key.w):
-                    if ret in (Key.W, Key.w):
-                        self.axis_ratio += 0.025
-                    if ret in (Key.S, Key.s):
-                        self.axis_ratio -= 0.025
-                    self.minor_axis = self.get_minor_axis(self.major_axis)
-                    self.update_image(self.center, self.major_axis, self.minor_axis)
-
-        return self
