@@ -1,6 +1,7 @@
 import os
 import uuid
 from contextlib import contextmanager
+from tkinter import E
 from typing import Callable
 
 import cv2
@@ -32,8 +33,9 @@ def close_window(winname: str) -> None:
         if winname in USED_WINNAME:
             USED_WINNAME.remove(winname)
         cv2.waitKey(1)
-    except Exception as e:
-        print(e)
+    except cv2.error as e:
+        if e.code != -27:
+            raise e
 
 
 @contextmanager
