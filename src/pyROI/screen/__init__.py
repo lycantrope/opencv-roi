@@ -22,9 +22,9 @@ def retrieve() -> tuple[int, int]:
         width, height = struct.unpack("<ll", recv)
     except Exception as e:
         print(e)
-    if not isinstance(width) or width <= 0:
+    if not isinstance(width, int) or width <= 0:
         width = 1280
-    if not isinstance(height) or height <= 0:
+    if not isinstance(height, int) or height <= 0:
         height = 800
     return width, height
 
