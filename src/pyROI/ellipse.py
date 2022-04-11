@@ -1,3 +1,4 @@
+import logging
 import math
 from dataclasses import dataclass
 from typing import Optional
@@ -13,7 +14,6 @@ from .color import WHITE
 from .color import YELLOW
 from .image import Image
 from .key import Key
-from .point import calculate_distance
 from .point import Point
 from .point import Vector2D
 from .screen import SCREEN_HEIGHT
@@ -93,7 +93,7 @@ class Ellipse(Roi):
 
         if not winname:
             winname = "Select region of interest (ROI)..."
-        print("Press `w` or `s` to adjust the ratio of ellipse axes")
+        logging.info("Press `w` or `s` to adjust the ratio of ellipse axes")
         with named_window(
             winname,
             winpos_x=winpos_x,
@@ -165,7 +165,7 @@ class Ellipse(Roi):
         self, center: Point, major_axis: Vector2D, minor_axis: Vector2D
     ) -> None:
         _mask = np.zeros_like(self._src_raw, dtype=np.uint8)
-
+        H, W = _mask.shape[:2]
         _mask = cv2.ellipse(
             _mask,
             center,
@@ -180,8 +180,13 @@ class Ellipse(Roi):
         pt2 = Point(center.x + major_axis.i, center.y + major_axis.j)
         _mask = cv2.line(_mask, center, pt2, color=RED, thickness=2)
         cv2.circle(_mask, center=pt2, radius=3, color=GREEN, thickness=-1)
+        _x = int(min(max(0, center.x + minor_axis.i), W))
+        if minor_axis.i == 0:
+            _y = min(max(int(minor_axis.j + center.y), 0), H)
+        else:
+            _y = int(minor_axis.j / minor_axis.i * (_x - center.x) + center.y)
 
-        pt2 = Point(max(0, center.x + minor_axis.i), max(0, center.y + minor_axis.j))
+        pt2 = Point(_x, _y)
         _mask = cv2.line(_mask, center, pt2, color=GREEN, thickness=2)
 
         cv2.circle(_mask, center=center, radius=3, color=RED, thickness=-1)

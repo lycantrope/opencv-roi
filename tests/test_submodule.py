@@ -8,7 +8,7 @@ from numpy import uint8
 
 @pytest.fixture
 def test_image() -> ndarray:
-    W, H = random.choice(arange(200, 500, 50, int), 2)
+    W, H = random.choice(arange(300, 500, 50, int), 2)
     if random.choice([False, True]):
         return random.randint(0, 255, W * H * 3, dtype=uint8).reshape(H, W, 3)
     return random.randint(0, 255, W * H, dtype=uint8).reshape(H, W)
