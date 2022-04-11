@@ -16,7 +16,7 @@ mask = rect_roi.mask
 ```
 """
 __author__ = "Chung-Kuan Chen (b97b01045@gmail.com)"
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 
 from .key import *
 from .circle import *
@@ -28,6 +28,10 @@ from .rect import *
 from .screen import SCREEN_HEIGHT, SCREEN_WIDTH
 from .utils import *
 from .window import *
+import logging
+
+
+logging.basicConfig()
 
 __all__ = [
     # class

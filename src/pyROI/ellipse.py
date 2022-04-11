@@ -93,7 +93,9 @@ class Ellipse(Roi):
 
         if not winname:
             winname = "Select region of interest (ROI)..."
-        logging.info("Press `w` or `s` to adjust the ratio of ellipse axes")
+        logging.getLogger(__name__).info(
+            "Press `w` or `s` to adjust the ratio of ellipse axes"
+        )
         with named_window(
             winname,
             winpos_x=winpos_x,
@@ -181,10 +183,10 @@ class Ellipse(Roi):
         _mask = cv2.line(_mask, center, pt2, color=RED, thickness=2)
         cv2.circle(_mask, center=pt2, radius=3, color=GREEN, thickness=-1)
         _x = int(min(max(0, center.x + minor_axis.i), W))
-        if minor_axis.i == 0:
+        if minor_axis.i in (0, np.nan):
             _y = min(max(int(minor_axis.j + center.y), 0), H)
         else:
-            _y = int(minor_axis.j / minor_axis.i * (_x - center.x) + center.y)
+            _y = int((minor_axis.j / minor_axis.i) * (_x - center.x) + center.y)
 
         pt2 = Point(_x, _y)
         _mask = cv2.line(_mask, center, pt2, color=GREEN, thickness=2)
