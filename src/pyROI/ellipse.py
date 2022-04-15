@@ -18,7 +18,7 @@ from .point import Point
 from .point import Vector2D
 from .screen import SCREEN_HEIGHT
 from .screen import SCREEN_WIDTH
-from .window import named_window
+from .window import NamedWindow
 
 __all__ = ["Ellipse"]
 
@@ -96,15 +96,14 @@ class Ellipse(Roi):
         logging.getLogger(__name__).info(
             "Press `w` or `s` to adjust the ratio of ellipse axes"
         )
-        with named_window(
+        with NamedWindow(
             winname,
             winpos_x=winpos_x,
             winpos_y=winpos_y,
             callback=self.__mouse_callback,
-        ) as name:
+        ) as window:
             while self._run_flag:
-                cv2.imshow(name, self._view)
-                ret = cv2.waitKey(10) & 0xFF
+                ret = window.imshow(self._view).waitKey(10)
                 if ret in (
                     Key.ENTER,
                     Key.ESC,

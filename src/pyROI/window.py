@@ -1,7 +1,5 @@
 import os
 import uuid
-from contextlib import contextmanager
-from tkinter import E
 from typing import Callable
 
 import cv2
@@ -13,7 +11,7 @@ from .screen import SCREEN_WIDTH
 
 cv2.setNumThreads(os.cpu_count())
 
-__all__ = ["named_window", "show_window"]
+__all__ = ["NamedWindow", "show_window"]
 
 USED_WINNAME = set()
 
@@ -26,42 +24,69 @@ def verify_winname(winname: str) -> str:
     return name
 
 
-def close_window(winname: str) -> None:
-    try:
-        cv2.waitKey(1)
-        cv2.destroyWindow(winname)
-        if winname in USED_WINNAME:
-            USED_WINNAME.remove(winname)
-        cv2.waitKey(1)
-    except cv2.error as e:
-        if e.code != -27:
-            raise e
+class NamedWindow:
+    USED_WINNAME = set()
 
+    def __init__(
+        self,
+        winname: str,
+        *,
+        winpos_x: int = SCREEN_WIDTH // 2 - 100,
+        winpos_y: int = SCREEN_HEIGHT // 2 - 100,
+        callback: Callable = None,
+        hook_func: Callable = None,
+    ):
+        self.name = self.verify_winname(winname)
+        self.winpos_x = winpos_x
+        self.winpos_y = winpos_y
+        self.callback = callback
+        self.hook_func = hook_func
 
-@contextmanager
-def named_window(
-    winname: str,
-    *,
-    winpos_x: int = SCREEN_WIDTH // 2 - 100,
-    winpos_y: int = SCREEN_HEIGHT // 2 - 100,
-    callback: Callable = None,
-    hook_func: Callable = None,
-):
-    try:
-        name = verify_winname(winname)
-        cv2.namedWindow(name, cv2.WINDOW_NORMAL)
-        cv2.setWindowProperty(name, cv2.WND_PROP_TOPMOST, 1)
+    def __enter__(self) -> "NamedWindow":
+        cv2.namedWindow(self.name, cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty(self.name, cv2.WND_PROP_TOPMOST, 1)
         cv2.waitKey(1)
-        cv2.setWindowProperty(name, cv2.WND_PROP_TOPMOST, 0)
-        cv2.moveWindow(name, winpos_x, winpos_y)
-        if callable(callback):
-            cv2.setMouseCallback(name, callback)
+        cv2.setWindowProperty(self.name, cv2.WND_PROP_TOPMOST, 0)
+        cv2.moveWindow(self.name, self.winpos_x, self.winpos_y)
+        if callable(self.callback):
+            cv2.setMouseCallback(self.name, self.callback)
         cv2.startWindowThread()
-        yield name
-    finally:
-        close_window(name)
-        if callable(hook_func):
-            hook_func()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close_window(self.name)
+        if callable(self.hook_func):
+            self.hook_func()
+
+    def imshow(self, image: ndarray) -> "NamedWindow":
+        cv2.imshow(self.name, image)
+        return self
+
+    def waitKey(self, milliseconds: int) -> int:
+        return cv2.waitKey(milliseconds) & 0xFF
+
+    def getWindowProperty(self, CV_WND_PROP):
+        return cv2.getWindowProperty(self.name, CV_WND_PROP)
+
+    @classmethod
+    def verify_winname(cls, winname: str) -> str:
+        name = winname
+        while name in cls.USED_WINNAME:
+            name = f"{winname}-{uuid.uuid1().hex[:8]}"
+        cls.USED_WINNAME.add(name)
+        return name
+
+    @classmethod
+    def close_window(cls, winname: str) -> None:
+        try:
+            cv2.waitKey(1)
+            cv2.destroyWindow(winname)
+            if winname in cls.USED_WINNAME:
+                cls.USED_WINNAME.remove(winname)
+            cv2.waitKey(1)
+        except cv2.error as e:
+            if e.code != -27:
+                raise e
 
 
 def show_window(src: ndarray, *, winname: str = "", **kwargs):
@@ -79,11 +104,10 @@ def show_window(src: ndarray, *, winname: str = "", **kwargs):
     if not winname:
         winname = "image"
 
-    with named_window(winname, **kwargs) as name:
+    with NamedWindow(winname, **kwargs) as win:
         while True:
-            cv2.imshow(name, src)
-            ret = cv2.waitKey(15) & 0xFF
+            ret = win.imshow(src).waitKey(15)
             if ret in (Key.ESC, Key.ENTER, Key.Q, Key.q):
                 break
-            if cv2.getWindowProperty(name, cv2.WND_PROP_VISIBLE) < 1:
+            if win.getWindowProperty(cv2.WND_PROP_VISIBLE) < 1:
                 break

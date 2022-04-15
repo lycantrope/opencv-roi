@@ -2,6 +2,7 @@ import struct
 import tkinter
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Tuple
 
 
 @contextmanager
@@ -12,7 +13,7 @@ def tk_instance():
     root.destroy()
 
 
-def retrieve_screen_resolution() -> tuple[int, int]:
+def retrieve_screen_resolution() -> Tuple[int, int]:
     with tk_instance() as root:
         width = root.winfo_screenwidth()
         height = root.winfo_screenheight()

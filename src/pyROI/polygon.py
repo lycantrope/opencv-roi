@@ -1,6 +1,7 @@
 from contextlib import ExitStack
 from dataclasses import dataclass
 from dataclasses import field
+from typing import List
 from typing import Optional
 
 import cv2
@@ -17,14 +18,14 @@ from .key import Key
 from .point import Point
 from .screen import SCREEN_HEIGHT
 from .screen import SCREEN_WIDTH
-from .window import named_window
+from .window import NamedWindow
 
 __all__ = ["Polygon"]
 
 
 @dataclass
 class Polygon(Roi):
-    verts: list[Point] = field(init=False, default_factory=list)
+    verts: List[Point] = field(init=False, default_factory=list)
     src_size: Image = None
 
     def __post_init__(self) -> None:
@@ -72,15 +73,14 @@ class Polygon(Roi):
         if not winname:
             winname = "Select region of interest (ROI)..."
 
-        with named_window(
+        with NamedWindow(
             winname,
             winpos_x=winpos_x,
             winpos_y=winpos_y,
             callback=self.__mouse_callback,
-        ) as name:
+        ) as window:
             while self._run_flag:
-                cv2.imshow(name, self._view)
-                ret = cv2.waitKey(10) & 0xFF
+                ret = window.imshow(self._view).waitKey(10)
                 if ret in (Key.ENTER, Key.S, Key.s):  # Select the roi when press
                     # show window again
                     break
@@ -98,16 +98,16 @@ class Polygon(Roi):
         )
         shift = src.shape[1] // 2
         with ExitStack() as stack:
-            mask_winname = stack.enter_context(
-                named_window(
+            mask_window = stack.enter_context(
+                NamedWindow(
                     "mask",
                     winpos_x=max(winpos_x - shift, 0),
                     winpos_y=winpos_y,
                     hook_func=cv2.destroyAllWindows,
                 )
             )
-            overlap_winname = stack.enter_context(
-                named_window(
+            overlap_window = stack.enter_context(
+                NamedWindow(
                     "overlap",
                     winpos_x=max(winpos_x + shift, 0),
                     winpos_y=winpos_y,
@@ -117,9 +117,8 @@ class Polygon(Roi):
             stack.callback(self.__post_init__)
             checked = False
             while not checked:
-                cv2.imshow(mask_winname, mask)
-                cv2.imshow(overlap_winname, overlap)
-                ret = cv2.waitKey(10) & 0xFF
+                mask_window.imshow(mask)
+                ret = overlap_window.imshow(overlap).waitKey(10)
                 if ret in (Key.R, Key.r):
                     break
                 if ret in (Key.ENTER, Key.s, Key.S):

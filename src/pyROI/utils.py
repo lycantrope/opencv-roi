@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import Union
 
 from numpy import ndarray
@@ -10,8 +11,7 @@ from .rect import Rect
 
 __all__ = ["select"]
 
-
-SELECTOR_FACTORY: dict[str:Roi] = {
+SELECTOR_FACTORY: Dict[str, Roi] = {
     "circle": Circle,
     "poly": Polygon,
     "polygon": Polygon,
@@ -32,7 +32,7 @@ class SelectorTypeError(TypeError):
 
 def select(
     src: ndarray,
-    selector_type="rect",
+    selector_type: str = "rect",
     **kwargs,
 ) -> Union[Rect, Polygon, Circle, Ellipse]:
     """A roi select factory supporting rect/circle/polygon/ellipse selection

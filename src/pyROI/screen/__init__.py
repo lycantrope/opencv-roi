@@ -2,9 +2,10 @@ import pathlib
 import struct
 import subprocess as sp
 import sys
+from typing import Tuple
 
 
-def retrieve() -> tuple[int, int]:
+def retrieve() -> Tuple[int, int]:
     home = pathlib.Path(__file__).resolve().parent
     runner = home.joinpath("__runner__.py")
     cache_file = home.joinpath("__pycache__", "__cache__")
